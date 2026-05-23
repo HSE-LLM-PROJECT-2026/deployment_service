@@ -67,14 +67,18 @@ LOG_LEVEL=INFO
 ```
 
 ## Основные API-ручки
-- `GET /health`
-- `GET /livez`
-- `GET /service-info`
-- `GET /deployments`
-- `POST /deployments`
-- `GET /deployments/{deployment_id}`
-- `POST /deployments/{deployment_id}/redeploy`
-- `DELETE /deployments/{deployment_id}`
+
+| Метод | Ручка | Кто использует | Назначение |
+|--------|-------|----------------|------------|
+| `GET` | `/health` | Ingress, мониторинг | Проверяет, что сервис доступен и может отвечать на management-запросы. |
+| `GET` | `/livez` | Kubernetes | Liveness probe для перезапуска контейнера при зависании процесса. |
+| `GET` | `/service-info` | Frontend, state facade | Возвращает имя сервиса, версию и базовую информацию для страницы статуса. |
+| `GET` | `/deployments` | Frontend, release controller, autoscaler service | Отдает список LLM-развертываний с моделью, кластером, статусом и параметрами запуска. |
+| `POST` | `/deployments` | Frontend, CI/CD | Создает deployment metadata и отправляет LLMDeployment CRD в Kubernetes client manager. |
+| `GET` | `/deployments/{deployment_id}` | Frontend, validation service, release controller | Возвращает детальное состояние конкретного развертывания. |
+| `DELETE` | `/deployments/{deployment_id}` | Frontend | Удаляет deployment из control plane и инициирует удаление связанного LLMDeployment. |
+| `POST` | `/deployments/{deployment_id}/redeploy` | Frontend, CI/CD | Перезапускает существующее развертывание без создания новой бизнес-сущности. |
+| `POST` | `/deployments/{deployment_id}/validate` | Deployment service, Frontend | Запускает проверку модели через validation service после поднятия runtime workload. |
 
 ## Сборка и запуск в Docker
 
