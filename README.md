@@ -1,7 +1,5 @@
 # Deployment Service
 
-[HSE-LLM-PROJECT-2026/deployment_service](https://github.com/HSE-LLM-PROJECT-2026/deployment_service)
-
 ## Описание
 
 FastAPI-сервис для управления жизненным циклом LLM-развертываний. В целевой архитектуре отвечает за создание, просмотр, redeploy и удаление deployment-объектов, а также за координацию запуска валидации.
