@@ -1,54 +1,87 @@
 # Deployment Service
 
+[HSE-LLM-PROJECT-2026/deployment_service](https://github.com/HSE-LLM-PROJECT-2026/deployment_service)
+
 ## Описание
 
-Сервис управления жизненным циклом деплойментов моделей: создание, просмотр, удаление, redeploy и запуск валидации.
+FastAPI-сервис для управления жизненным циклом LLM-развертываний. В целевой архитектуре отвечает за создание, просмотр, redeploy и удаление deployment-объектов, а также за координацию запуска валидации.
 
 ## Основные возможности
 
-- создание и удаление deployment-записей
-- запуск redeploy и validation
-- публикация service-info/health для control plane
+- создание и хранение описаний LLMDeployment
+- получение состояния deployment по идентификатору
+- redeploy существующего deployment
+- запуск проверки deployment через validation service
+- служебные health/livez/service-info ручки
+
+## Основные API-ручки
+
+- `/deployments`
+- `/deployments/{deployment_id}`
+- `/deployments/{deployment_id}/redeploy`
+- `/deployments/{deployment_id}/validate`
 
 ## Структура проекта
 
-- `app/` - код сервиса (FastAPI, config, domain handlers)
-- `deploy/` - служебные файлы для роли сервиса в деплое
-- `pyproject.toml` - зависимости и метаданные проекта
-- `Dockerfile` - сборка контейнера
-- `.env.example` - пример переменных окружения
+- `app/` — код FastAPI-сервиса
+- `app/main.py` — HTTP API и базовая service runtime логика
+- `app/config.py` — настройки сервиса через переменные окружения
+- `deploy/` — файлы для раскатки сервиса
+- `Dockerfile` — сборка контейнера
+- `pyproject.toml`, `uv.lock` — зависимости Python
+- `.env.example` — пример конфигурации
 
-## Быстрый старт (локально)
+## Быстрый старт локально
 
 1. Установить зависимости:
-   `uv sync --frozen --extra dev`
+   ```bash
+   uv sync --frozen
+   ```
+
 2. Запустить сервис:
-   `uv run uvicorn app.main:app --host 0.0.0.0 --port 8000`
-3. Проверить health:
-   `curl http://127.0.0.1:8000/health`
+   ```bash
+   uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+   ```
+
+3. Проверить, что сервис живой:
+   ```bash
+   curl http://localhost:8000/health
+   ```
 
 ## Переменные окружения
 
-- `SERVICE_ROLE` - роль сервиса в control plane
-- `SERVICE_NAME` - техническое имя сервиса
-- `POSTGRES_DSN` - строка подключения к PostgreSQL
-- `PROMETHEUS_BASE_URL` - адрес Prometheus
-- `SERVICE_TO_SERVICE_URLS_JSON` - карта внутренних URL сервисов
+- `POSTGRES_HOST`, `POSTGRES_PORT`, `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD` — подключение к PostgreSQL
+- `K8S_NAMESPACE` — namespace платформы в Kubernetes
+- `SECURITY_AUDIT_BASE_URL` — адрес security/audit service
+- `SECURITY_AUDIT_SERVICE_TOKEN` — service-to-service токен
+- `STATUS_PROMETHEUS_BASE_URL` — адрес Prometheus для сервисов, которым нужны метрики
+- `IMAGE_REPOSITORY`, `IMAGE_TAG`, `RELEASE_NAME`, `KUBECONFIG_PATH` — параметры deploy-скриптов
+
+Полный пример лежит в `.env.example`.
 
 ## Docker
 
-- Сборка: `docker build -t deployment_service:local .`
-- Запуск: `docker run --rm -p 8000:8000 --env-file .env deployment_service:local`
+```bash
+docker build -t awesomecosmonaut/deployment_service:latest .
+docker run --env-file .env -p 8000:8000 awesomecosmonaut/deployment_service:latest
+```
 
 ## Деплой
 
-Файлы для деплоя лежат в `deploy/`.
+Файлы для раскатки лежат в `deploy/`.
 
-## Основные API ручки
+```bash
+cd deploy
+./deploy-from-scratch.sh
+```
 
-- `GET /deployments`
-- `POST /deployments`
-- `GET /deployments/{deployment_id}`
-- `DELETE /deployments/{deployment_id}`
-- `POST /deployments/{deployment_id}/redeploy`
-- `POST /deployments/{deployment_id}/validate`
+Если нужно пересобрать образ и полностью переустановить сервис:
+
+```bash
+cd deploy
+./rebuild-delete-deploy.sh
+```
+
+## Автор
+
+Igor Malysh
